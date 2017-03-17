@@ -2,10 +2,14 @@
 ;Domenic,Martin,Paul,Chris^2
 ;March 17 2017
 ;Phys 2P32
-;The task is to detect (count) the time of an astronomical Event, with 10ms resolution (assuming a precise clock of 100 Hz is available externally, if necessary),
-;and to display the time in the format "YY:DDD:HH:MM:SS.mm", where YY=0..99, DDD=0..365 (note that one year is 365.25 days), HH=0..23, MM=0..59, SS=0..59, mm=0..99. ;Assume you would be using the LCD display, 2x40 characters.
+;The task is to detect (count) the time of an astronomical Event, with 10ms resolution (assuming a precise clock of 100 Hz is 
+;available externally, if necessary),
+;and to display the time in the format "YY:DDD:HH:MM:SS.mm", where YY=0..99, DDD=0..365 (note that one year is 365.25 days), 
+;HH=0..23, MM=0..59, SS=0..59, mm=0..99. ;Assume you would be using the LCD display, 2x40 characters.
 ;
-;To test transitions across hour/day/year boundaries your counter should be pre-loadable with appropriate values that can demonstrate these transitions within a few ;seconds, e.g. something like "00:365:23:59:55.00" could be pre-loaded as a starting point for the "stopwatch". 
+;To test transitions across hour/day/year boundaries your counter should be pre-loadable with appropriate values that can 
+;demonstrate these transitions within a few ;seconds, e.g. something like "00:365:23:59:55.00" could be pre-loaded as a 
+;starting point for the "stopwatch"
 ;Uses LCD subroutines to display to LCD Display
 ;Uses built in Math subroutines
 
@@ -20,15 +24,15 @@ leapYr	equ	0x25
 ; intialize registers
 	movlw	0
 	movwf	Milisecs 	;initilize Miliseconds
-	movlw	55
+	movlw	0
 	movwf	Seconds	;initilize seconds
-	movlw	59
+	movlw	6
 	movwf	Minutes	;initilize Minutes
-	movlw	23
+	movlw	15
 	movwf	Hours	;initilize Hours
-	movlw	108
+	movlw	76
 	movwf	Days0 	;initilize Days0
-	movlw	1
+	movlw	0
 	movwf	Days1 	;initilize Days1
 	movlw	20
 	movwf	Year1 	;initilize Year0
@@ -38,10 +42,19 @@ leapYr	equ	0x25
 	call LCDinit
 
 begin	
-	movlw	1		;adds 1 second to delay
-	call 	Delay1s
+	movlw	16
+	call	Wait		;delay 2.480 milisecs
+
+	call	Getkey		;check if key pressed
+	sublw	7
+	btfss	STATUS,Z	;if not skip displaying
+	goto 	display
+	
+	movf	Count5ms,W	;put Count5ms to W
+	btfss	STATUS,Z	;test if count5ms is 0 if 0 skip loop
+	goto 	begin
     
-	movlw   0x00		;sets lcd pointer to top left corner
+display	movlw   0x00		;sets lcd pointer to top left corner
 	call    LCDset    
     
 	call    DisplayYear	;displays year (Y1/y0)
@@ -65,6 +78,8 @@ begin
 ;;;;;;;;;;;;;;;;;;;;;;
 ;allows for button to stop program and display count for ms (x/1000)
 ;;;;;;;;;;;;;;;;;;;;
+;gets button if pressed then stop timer and display time to a 5ms resolution
+
 	
 	call	Getkey		;allows for a button to stop program and display MS count
 
@@ -97,7 +112,8 @@ begin
 	movf	temp,W		;move remainder to W
 	addlw	48		;add 48 to convert to ASCII
 	call	ASC2LCD	;write to LCD
-	return	
+	return
+	
 ;;;;;;;;;;;;;;
 ;Main End Here
 ;;;;;;;;;;;;;;
@@ -253,6 +269,8 @@ testLeap
 	btfss	STATUS,Z    ;test if the bits were 0
 	clrf	leapYr      ;if the bit wasnt zero then clear leapYr because it's not a leap year
 	return              
+
+
 
 
 
