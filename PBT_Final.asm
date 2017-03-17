@@ -19,10 +19,12 @@ leapYr	equ	0x25
 	movwf	Days0 	;initilize Days0
 	movlw	1
 	movwf	Days1 	;initilize Days1
-	movlw	0
-	movwf	Year0 	;initilize Year0
-	movlw	0
-	movwf	Year1 	;initilize Year1	
+	movlw	20
+	movwf	Year1 	;initilize Year0
+	movlw	17
+	movwf	Year0 	;initilize Year1	
+
+	call LCDinit
 
 begin	
 	movlw	1
@@ -39,6 +41,9 @@ begin
 
 	call    DisplayDay
     
+	movlw	0x40
+	call	LCDset
+
 	movlw   ':
 	call    ASC2LCD
 
@@ -47,24 +52,100 @@ begin
 	call    testLeap
 	call	incDaysYears
 	
-	goto 	begin
+	call	Getkey
+	
+	call 	TxByte
+
+	sublw	7
+	btfsc	STATUS,Z
+	goto	begin
+	movlw	'.
+	call	ASC2LCD
+	movf	Count5ms,W
+	movwf	WL
+	movlw	5
+	call	Mul8x8
+	movlw	100
+	movwf	CH
+	call	Div16x8
+	movwf	temp
+	movf	WL,W
+	addlw	48
+	call	ASC2LCD
+	movf	temp,W
+	clrf	WH
+	movwf	WL
+	movlw	10
+	movwf	CH
+	call	Div16x8
+	movwf	temp
+	movf	WL,W
+	addlw	48
+	call	ASC2LCD
+	movf	temp,W
+	addlw	48
+	call	ASC2LCD
+	return	
 
 nextYear
 ;Martin
-;count up the year
+;count up the year and clears days 
 ;year1 = century (00-99)
 ;year0 = year within the century (00-99)
+	clrf	Days0
+	clrf	Days1
+	incf	Year0
+	movlw	100
+	subwf	Year0
+	btfss	STATUS,Z
+	return
+	clrf	Year0
+	incf	Year1
 	return
 
 
 DisplayYear
-;Martin
 ;displays the year as a 4 digit number
+	
+	clrf	WH	;clear WH
+	movf	Year1,W;put MSB of Years into W
+	movwf	WL	;put years1 into WL
+	
+	movlw	10	
+	movwf	CH	;put 10 into CH
+
+	call	Div16x8	;divide Years1 by 10
+	movwf	temp	;put remainder in temp
+	movf	WL,W	;put result in W
+
+	addlw	48	;add 48 to result to convert to ASCII
+	call	ASC2LCD	;put first digit of year to LCD
+	
+	movf	temp,W	;put remainder into W
+	addlw	48	;add 48 to convert to ASCII
+	call	ASC2LCD	;write second digit to LCD
+	
+	clrf	WH	;clear WH
+	movf	Year0,W;put Years0 to W
+	movwf	WL	;put into WL to divide
+
+	movlw	10	
+	movwf	CH	;put 10 into CH
+
+	call	Div16x8	;divide Years0 by 10
+	movwf	temp	;put remainder in temp
+	movf	WL,W	;put result in W
+
+	addlw	48	;add 48 to result to convert to ASCII
+	call	ASC2LCD	;put third digit of year to LCD
+	
+	movf	temp,W	;put remainder into W
+	addlw	48	;convert fourth digit to ASCII
+	call	ASC2LCD	;put fourth digit of year to LCD
 
 	return
 
 DisplayDay
-;Paul/Me
 ;displays the day as a 3 digit number
 	
 	movf	Days0,W
